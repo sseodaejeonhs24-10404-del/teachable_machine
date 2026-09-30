@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>올빼미상 vs 부엉이상 테스트</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        /* 둥둥 떠다니는 애니메이션 */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* 팝핑 애니메이션 (테마 변경 시) */
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 카메라 캔버스를 모바일 기기 화면에 맞게 반응형으로 조정 */
+        #webcam-container canvas {
+            width: 100% !important;
+            height: auto !important;
+            border-radius: 1.5rem;
+            object-fit: cover;
+            aspect-ratio: 1 / 1;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 프로그레스 바 부드러운 전환 효과 */
+        .progress-bar {
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+        }
+        
+        /* 배경색 부드러운 전환 */
+        #main-bg {
+            transition: all 0.8s ease-in-out;
+        }
+        #main-card {
+            transition: all 0.5s ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-gray-800">
+    <!-- 전체 배경 (상태에 따라 클래스가 자바스크립트로 변경됩니다) -->
+    <div id="main-bg" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-purple-100">
+        
+        <!-- 메인 카드 -->
+        <div id="main-card" class="w-full max-w-md bg-white/95 backdrop-blur-sm rounded-[2rem] shadow-2xl overflow-hidden p-6 relative border-4 border-transparent transition-colors">
+            
+            <!-- 상단 마스코트 일러스트 영역 -->
+            <div class="flex justify-center mb-4 h-28 items-end">
+                <div id="mascot-container" class="animate-float">
+                    <!-- 기본 상태 마스코트 (물음표) -->
+                    <div id="icon-default" class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center shadow-inner text-4xl border-4 border-gray-200">
+                        🤔
+                    </div>
+                    
+                    <!-- 올빼미상 마스코트 (숨김 상태로 시작) -->
+                    <svg id="icon-owl" class="hidden w-28 h-28 drop-shadow-md" viewBox="0 0 100 100">
+                        <!-- 동글동글 얼굴 -->
+                        <circle cx="50" cy="55" r="42" fill="#E6CCB2" />
+                        <!-- 눈 주변 털 -->
+                        <circle cx="33" cy="48" r="18" fill="#F5E6D3" />
+                        <circle cx="67" cy="48" r="18" fill="#F5E6D3" />
+                        <!-- 큰 눈 -->
+                        <circle cx="33" cy="48" r="12" fill="white" />
+                        <circle cx="67" cy="48" r="12" fill="white" />
+                        <!-- 눈동자 -->
+                        <circle cx="33" cy="48" r="6" fill="#4A3F35" />
+                        <circle cx="67" cy="48" r="6" fill="#4A3F35" />
+                        <!-- 반짝이 -->
+                        <circle cx="30" cy="45" r="2" fill="white" />
+                        <circle cx="64" cy="45" r="2" fill="white" />
+                        <!-- 부리 -->
+                        <polygon points="50,58 45,68 55,68" fill="#D4A373" />
+                        <!-- 홍조 -->
+                        <ellipse cx="20" cy="60" rx="6" ry="4" fill="#FFB5A7" opacity="0.7" />
+                        <ellipse cx="80" cy="60" rx="6" ry="4" fill="#FFB5A7" opacity="0.7" />
+                    </svg>
+
+                    <!-- 부엉이상 마스코트 (숨김 상태로 시작) -->
+                    <svg id="icon-horned-owl" class="hidden w-28 h-28 drop-shadow-md" viewBox="0 0 100 100">
+                        <!-- 뾰족한 귀 (뿔깃) -->
+                        <polygon points="15,10 40,35 15,45" fill="#7F5539" />
+                        <polygon points="85,10 85,45 60,35" fill="#7F5539" />
+                        <!-- 귀 안쪽 -->
+                        <polygon points="20,18 35,33 22,40" fill="#E6CCB2" />
+                        <polygon points="80,18 78,40 65,33" fill="#E6CCB2" />
+                        <!-- 둥근 얼굴 -->
+                        <circle cx="50" cy="55" r="40" fill="#9C6644" />
+                        <!-- 눈 주변 무늬 -->
+                        <circle cx="33" cy="50" r="16" fill="#DDB892" />
+                        <circle cx="67" cy="50" r="16" fill="#DDB892" />
+                        <!-- 강렬한 눈 -->
+                        <circle cx="33" cy="50" r="10" fill="#FFF3B0" />
+                        <circle cx="67" cy="50" r="10" fill="#FFF3B0" />
+                        <!-- 눈동자 (고양이 눈매) -->
+                        <ellipse cx="33" cy="50" rx="3" ry="8" fill="#332211" />
+                        <ellipse cx="67" cy="50" rx="3" ry="8" fill="#332211" />
+                        <!-- 부리 -->
+                        <polygon points="50,60 46,72 54,72" fill="#F6BD60" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 헤더 텍스트 -->
+            <div class="text-center mb-6">
+                <h1 id="main-title" class="text-2xl font-extrabold text-gray-800 mb-2 transition-colors">✨ 나는 무슨 상일까?</h1>
+                <p id="sub-title" class="text-gray-500 font-medium text-sm transition-colors">올빼미(동글) vs 부엉이(뾰족) AI 테스트</p>
+            </div>
+
+            <!-- 현재 1위 결과 강조 텍스트 -->
+            <div id="live-result" class="hidden text-center mb-4">
+                <span class="inline-block bg-gray-100 text-gray-800 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-gray-200">
+                    분석을 시작합니다...
+                </span>
+            </div>
+
+            <div id="webcam-container" class="w-full aspect-square bg-gray-50 rounded-[1.5rem] flex flex-col items-center justify-center mb-6 border-2 border-dashed border-gray-300 relative overflow-hidden transition-all duration-300">
+                <div id="webcam-placeholder-text" class="text-center p-4">
+                    <span class="text-5xl mb-3 block opacity-80">📸</span>
+                    <span class="text-gray-500 font-semibold text-base block mb-1">얼굴을 보여주세요!</span>
+                    <span class="text-gray-400 text-xs">아래 버튼을 눌러 카메라를 켭니다.</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="start-btn" onclick="init()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-4 px-4 rounded-2xl transition duration-300 shadow-lg hover:shadow-xl active:scale-95 text-lg flex items-center justify-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    카메라 켜고 시작하기
+                </button>
+                <div id="loading-message" class="hidden text-center text-indigo-500 font-semibold text-sm py-2 flex items-center justify-center gap-2">
+                    <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    AI 요정들이 준비 중이에요...
+                </div>
+            </div>
+
+            <!-- 프로그레스 바 영역 -->
+            <div id="label-container" class="mt-6 flex flex-col gap-4">
+                <!-- 자바스크립트를 통해 이곳에 결과 바가 동적으로 생성됩니다. -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script type="text/javascript">
+        // ✅ 여기에 Teachable Machine 모델 URL이 들어갑니다.
+        const URL = "https://teachablemachine.withgoogle.com/models/tQ24Iyq82/"; 
+
+        let model, webcam, labelContainer, maxPredictions;
+        let isInitialized = false;
+        let currentTheme = 'default';
+
+        // 테마 설정 데이터
+        const THEMES = {
+            'default': {
+                bg: 'from-indigo-50 to-purple-100',
+                cardBorder: 'border-transparent',
+                title: '✨ 나는 무슨 상일까?',
+                subtitle: '올빼미(동글) vs 부엉이(뾰족) AI 테스트',
+                iconId: 'icon-default',
+                barColor: 'bg-indigo-500'
+            },
+            'owl': {
+                bg: 'from-amber-100 to-orange-200',
+                cardBorder: 'border-amber-400',
+                title: '동글동글 귀여운 올빼미상! 🌝',
+                subtitle: '부드러운 인상과 사랑스러운 매력',
+                iconId: 'icon-owl',
+                barColor: 'bg-amber-500',
+                resultText: '올빼미상',
+                resultColor: 'bg-amber-100 text-amber-900 border-amber-300'
+            },
+            'horned_owl': {
+                bg: 'from-slate-800 to-indigo-950', // 밤 분위기
+                cardBorder: 'border-indigo-500',
+                title: '카리스마 뿜뿜 부엉이상! 🌙',
+                subtitle: '뚜렷한 이목구비와 지적인 분위기',
+                iconId: 'icon-horned-owl',
+                barColor: 'bg-indigo-600',
+                resultText: '부엉이상',
+                resultColor: 'bg-indigo-100 text-indigo-900 border-indigo-300'
+            }
+        };
+
+        async function init() {
+            if (isInitialized) return; 
+            
+            const startBtn = document.getElementById("start-btn");
+            const loadingMsg = document.getElementById("loading-message");
+            const placeholder = document.getElementById("webcam-placeholder-text");
+            const liveResult = document.getElementById("live-result");
+            
+            // UI 상태 변경
+            startBtn.classList.add("hidden");
+            loadingMsg.classList.remove("hidden");
+            loadingMsg.classList.add("flex");
+            if(placeholder) placeholder.style.display = "none";
+
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            try {
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                const flip = true; 
+                webcam = new tmImage.Webcam(400, 400, flip); 
+                
+                await webcam.setup({ facingMode: "user" }); 
+                await webcam.play();
+                window.requestAnimationFrame(loop);
+
+                const webcamContainer = document.getElementById("webcam-container");
+                webcamContainer.innerHTML = ''; 
+                webcamContainer.appendChild(webcam.canvas); 
+                // 카메라 테두리 스타일 변경
+                webcamContainer.classList.remove("border-dashed", "border-gray-300", "p-4"); 
+                webcamContainer.classList.add("border-solid", "border-gray-200", "shadow-inner");
+
+                labelContainer = document.getElementById("label-container");
+                labelContainer.innerHTML = ''; 
+                
+                // 프로그레스 바 생성
+                for (let i = 0; i < maxPredictions; i++) {
+                    const classLabel = model.getClassLabels()[i];
+                    
+                    const barHtml = `
+                        <div class="w-full bg-gray-50 p-3 rounded-2xl border border-gray-100 shadow-sm">
+                            <div class="flex justify-between mb-1.5 items-end">
+                                <span class="text-sm font-bold text-gray-700">${classLabel}</span>
+                                <span id="percent-${i}" class="text-lg font-extrabold text-gray-400 transition-colors">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden shadow-inner">
+                                <div id="bar-${i}" class="bg-gray-400 h-3.5 rounded-full progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    `;
+                    const div = document.createElement("div");
+                    div.innerHTML = barHtml;
+                    labelContainer.appendChild(div);
+                }
+                
+                loadingMsg.classList.add("hidden");
+                loadingMsg.classList.remove("flex");
+                liveResult.classList.remove("hidden");
+                isInitialized = true;
+
+            } catch (error) {
+                console.error(error);
+                alert("카메라 권한을 허용해주세요! (또는 모델 URL을 다시 확인해주세요)");
+                startBtn.classList.remove("hidden");
+                loadingMsg.classList.add("hidden");
+                loadingMsg.classList.remove("flex");
+                if(placeholder) placeholder.style.display = "block";
+            }
+        }
+
+        async function loop() {
+            webcam.update(); 
+            await predict(); 
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            
+            let highestProb = 0;
+            let bestClass = "";
+
+            for (let i = 0; i < maxPredictions; i++) {
+                const probability = Math.round(prediction[i].probability * 100);
+                const className = prediction[i].className;
+                
+                // 최고 확률 찾기
+                if (probability > highestProb) {
+                    highestProb = probability;
+                    bestClass = className;
+                }
+
+                const percentText = document.getElementById(`percent-${i}`);
+                const progressBar = document.getElementById(`bar-${i}`);
+                
+                if (percentText && progressBar) {
+                    percentText.innerText = probability + "%";
+                    progressBar.style.width = probability + "%";
+                    
+                    // 수치에 따른 진하기 조절
+                    if(probability > 50) {
+                        progressBar.style.opacity = "1";
+                        percentText.classList.add("text-gray-900");
+                        percentText.classList.remove("text-gray-400");
+                    } else {
+                        progressBar.style.opacity = "0.5";
+                        percentText.classList.remove("text-gray-900");
+                        percentText.classList.add("text-gray-400");
+                    }
+                }
+            }
+
+            // 확률이 60% 이상일 때만 확실한 상으로 판정하여 테마 변경
+            if (highestProb >= 60) {
+                updateThemeBasedOnClass(bestClass, highestProb);
+            } else {
+                updateThemeBasedOnClass('default', highestProb);
+            }
+        }
+
+        function updateThemeBasedOnClass(className, prob) {
+            let targetThemeKey = 'default';
+            
+            if (className.includes('올빼미')) {
+                targetThemeKey = 'owl';
+            } else if (className.includes('부엉이')) {
+                targetThemeKey = 'horned_owl';
+            }
+
+            // 테마가 바뀌었을 때만 UI 업데이트 실행
+            if (currentTheme !== targetThemeKey) {
+                currentTheme = targetThemeKey;
+                applyTheme(THEMES[targetThemeKey]);
+            }
+
+            // 실시간 결과 배지 텍스트 업데이트
+            if (targetThemeKey !== 'default') {
+                const liveBadge = document.querySelector('#live-result span');
+                liveBadge.innerText = `현재 분석: ${THEMES[targetThemeKey].resultText} (${prob}%)`;
+                liveBadge.className = `inline-block px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border transition-colors ${THEMES[targetThemeKey].resultColor}`;
+            }
+        }
+
+        function applyTheme(themeData) {
+            // 1. 배경색 변경
+            const mainBg = document.getElementById('main-bg');
+            mainBg.className = `min-h-screen flex items-center justify-center p-4 bg-gradient-to-br transition-colors duration-1000 ${themeData.bg}`;
+            
+            // 2. 카드 테두리 변경
+            const mainCard = document.getElementById('main-card');
+            mainCard.className = `w-full max-w-md bg-white/95 backdrop-blur-sm rounded-[2rem] shadow-2xl overflow-hidden p-6 relative border-4 transition-colors duration-500 ${themeData.cardBorder}`;
+
+            // 3. 타이틀 텍스트 변경
+            document.getElementById('main-title').innerText = themeData.title;
+            document.getElementById('sub-title').innerText = themeData.subtitle;
+            
+            // 제목 텍스트 색상 대응 (어두운 배경일 땐 글씨를 하얗게)
+            if(themeData.bg.includes('slate-800')) {
+                document.getElementById('main-title').classList.add('text-indigo-900'); // 카드는 하얀색이므로 글씨는 진하게 유지
+            }
+
+            // 4. 아이콘(마스코트) 토글
+            document.getElementById('icon-default').classList.add('hidden');
+            document.getElementById('icon-owl').classList.add('hidden');
+            document.getElementById('icon-horned-owl').classList.add('hidden');
+            
+            const activeIcon = document.getElementById(themeData.iconId);
+            activeIcon.classList.remove('hidden');
+            
+            // 팝핑 애니메이션 재실행을 위한 트릭
+            activeIcon.classList.remove('animate-pop');
+            void activeIcon.offsetWidth; 
+            activeIcon.classList.add('animate-pop');
+
+            // 5. 프로그레스 바 색상 일괄 변경
+            const bars = document.querySelectorAll('.progress-bar');
+            bars.forEach(bar => {
+                // 기존 색상 클래스 모두 제거
+                bar.classList.remove('bg-gray-400', 'bg-indigo-500', 'bg-amber-500', 'bg-indigo-600');
+                bar.classList.add(themeData.barColor);
+            });
+        }
+    </script>
+</body>
+</html>
